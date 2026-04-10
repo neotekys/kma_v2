@@ -55,31 +55,31 @@ class OdorDBManager:
             "total_steps": len(rows)
         }
     
-    # def migrate_location_names(self):
-    #     """지점명 일괄 변경 - 최초 1회만 실행"""
-    #     conn = None
-    #     try:
-    #         conn = psycopg2.connect(**self.db_config)
-    #         cur = conn.cursor()
-    #         cur.execute("UPDATE odor_forecast_history SET location = '중부' WHERE location = '중심';")
-    #         cur.execute("UPDATE odor_forecast_history SET location = '동부' WHERE location = '동측';")
-    #         cur.execute("UPDATE odor_forecast_history SET location = '서부' WHERE location = '서측';")
-    #         cur.execute("UPDATE odor_forecast_history SET location = '남부' WHERE location = '남측';")
-    #         cur.execute("UPDATE odor_forecast_history SET location = '북부' WHERE location = '북측';")
-    #         cur.execute("UPDATE kim_forecast_api_data SET location_name = '중부' WHERE location_name = '중심';")
-    #         cur.execute("UPDATE kim_forecast_api_data SET location_name = '동부' WHERE location_name = '동측';")
-    #         cur.execute("UPDATE kim_forecast_api_data SET location_name = '서부' WHERE location_name = '서측';")
-    #         cur.execute("UPDATE kim_forecast_api_data SET location_name = '남부' WHERE location_name = '남측';")
-    #         cur.execute("UPDATE kim_forecast_api_data SET location_name = '북부' WHERE location_name = '북측';")
-    #         conn.commit()
-    #         logging.info("지점명 마이그레이션 완료")
-    #     except Exception as e:
-    #         if conn: conn.rollback()
-    #         logging.error(f"마이그레이션 오류: {e}")
-    #     finally:
-    #         if conn:
-    #             cur.close()
-    #             conn.close()
+    def migrate_location_names(self):
+        """지점명 일괄 변경 - 최초 1회만 실행"""
+        conn = None
+        try:
+            conn = psycopg2.connect(**self.db_config)
+            cur = conn.cursor()
+            cur.execute("UPDATE odor_forecast_history SET location = '중부' WHERE location = '중심';")
+            cur.execute("UPDATE odor_forecast_history SET location = '동부' WHERE location = '동측';")
+            cur.execute("UPDATE odor_forecast_history SET location = '서부' WHERE location = '서측';")
+            cur.execute("UPDATE odor_forecast_history SET location = '남부' WHERE location = '남측';")
+            cur.execute("UPDATE odor_forecast_history SET location = '북부' WHERE location = '북측';")
+            cur.execute("UPDATE kim_forecast_api_data SET location_name = '중부' WHERE location_name = '중심';")
+            cur.execute("UPDATE kim_forecast_api_data SET location_name = '동부' WHERE location_name = '동측';")
+            cur.execute("UPDATE kim_forecast_api_data SET location_name = '서부' WHERE location_name = '서측';")
+            cur.execute("UPDATE kim_forecast_api_data SET location_name = '남부' WHERE location_name = '남측';")
+            cur.execute("UPDATE kim_forecast_api_data SET location_name = '북부' WHERE location_name = '북측';")
+            conn.commit()
+            logging.info("지점명 마이그레이션 완료")
+        except Exception as e:
+            if conn: conn.rollback()
+            logging.error(f"마이그레이션 오류: {e}")
+        finally:
+            if conn:
+                cur.close()
+                conn.close()
     
     def insert_odor_raw_data(self, data_list):
             """원시데이터 적재"""
