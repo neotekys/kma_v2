@@ -16,7 +16,15 @@ logger = logging.getLogger("odor")
 
 semaphore = asyncio.Semaphore(MAX_CONCURRENCY)
 
-
+SITE_NAME_MAP = {
+    "중심": "중부",
+    "서측": "서부",
+    "남측": "남부",
+    "동측": "동부",
+    "북측": "북부"
+}
+def normalize_site_name(name: str) -> str:
+    return SITE_NAME_MAP.get(name,name)
 # ============================================================
 # 파싱
 # ============================================================
@@ -55,15 +63,22 @@ async def _fetch_pressure_vals(client: httpx.AsyncClient, tmfc: str, hf: int, la
         async with semaphore:
             try:
                 resp = await client.get(KMA_BASE_URL, params=p_params)
-                if resp.status_code != 200:
+                
+                if resp.status_code != 200:         
                     if attempt < RETRY - 1:
                         await asyncio.sleep(2 * (attempt + 1))
                         continue
                     return {}
-                if "file is not exist" in resp.text:
+                
+                if isinstance(resp.content, bytes):
+                    text = resp.content.decode('euc-kr', errors='replace')
+                else:
+                    text = resp.text
+                
+                if "file is not exist" in text:    
                     return {}
-                logger.debug(f"상층 응답: {resp.text[:200]}")
-                lines = [ln.strip() for ln in resp.text.splitlines() if ln.strip()]
+                logger.debug(f"상층 응답: {text[:200]}")         
+                lines = [ln.strip() for ln in text.splitlines() if ln.strip()]  
                 all_data = {}
                 for ln in lines:
                     if not ln or ln.startswith("#") or not ln[0].isdigit():
@@ -107,11 +122,16 @@ async def worker(hf: int, site: str, lat: float, lon: float, tmfc: str, client: 
         }
         try:
             u_res = await client.get(KMA_BASE_URL, params=u_params)
-            if "file is not exist" in u_res.text:
+            if isinstance(u_res.content, bytes):
+                text = u_res.content.decode('euc-kr', errors='replace')
+            else:
+                text = u_res.text
+            
+            if "file is not exist" in text:        
                 return hf, site, None, None, None
-            u_parsed = parse_kma_pt_text(u_res.text)
+            u_parsed = parse_kma_pt_text(text)     
             if u_parsed.get("t2m", 0.0) == 0.0 and u_parsed.get("rh2m", 70) == 70:
-                logger.warning(f"HF {hf} {site}: t2m=0 응답: {u_res.text[:300]}")
+                logger.warning(f"HF {hf} {site}: t2m=0 응답: {text[:300]}")  
         except Exception as e:
             logger.warning(f"{tmfc} HF {hf} {site}: 하층 데이터 누락 {e}")
             return hf, site, None, None, None
@@ -282,7 +302,6 @@ async def get_processed_data(dataset: Dict, used_tmfc: str, hours: int, prev_dat
         current_map = dataset.get(hf)
         if not current_map:
             continue
-
         # 12시간 전 데이터 결정
         if hf >= 12:
             # 현재 tmfc 내에서 hf - 12
@@ -295,8 +314,8 @@ async def get_processed_data(dataset: Dict, used_tmfc: str, hours: int, prev_dat
             if prev_map is None:
                 logger.warning(f"HF {hf}: 이전 tmfc 데이터 없음, 변화량 0으로 처리")
 
-        current_kp_map = {site: kp for site, (kp, _, _) in current_map.items()}
-        prev_kp_map = {site: kp for site, (kp, _, _) in prev_map.items()} if prev_map else None
+        current_kp_map = {normalize_site_name(site): kp for site, (kp, _, _) in current_map.items()}
+        prev_kp_map = {normalize_site_name(site): kp for site, (kp, _, _) in prev_map.items()} if prev_map else None
 
         for site_name, kp in current_kp_map.items():
             prev_kp = prev_kp_map.get(site_name) if prev_kp_map else None
@@ -342,6 +361,8 @@ async def get_processed_data(dataset: Dict, used_tmfc: str, hours: int, prev_dat
 
         except Exception as e:
             logger.error(f"HF {hf} 분석 실패: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             continue
 
     if not history_list:
