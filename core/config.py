@@ -34,7 +34,7 @@ MAIN_SITES = ["중부", "동부", "서부","남부","북부"]
 # ============================================================
 # 2) KMA KIM API 설정
 # ============================================================
-DEFAULT_AUTH_KEY = "ZVCdZ89kTgCQnWfPZP4Apg"  # 기관 키
+DEFAULT_AUTH_KEY = "avC0phtFTCewtKYbRUwnUw"  # 기관 키
 
 KMA_AUTH_KEY = (
     os.getenv("KMA_AUTH_KEY")
