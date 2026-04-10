@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 DATABASE = {
     'host': 'localhost',      # 서버 주소
     'dbname': 'postgres',      # 데이터베이스명
