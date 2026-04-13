@@ -58,7 +58,7 @@ else:
 USER_TYPE = os.getenv("KMA_USER_TYPE", "institutional").lower()
 
 # 엔드포인트 설정
-_DEFAULT_INSTITUTIONAL_URL = "https://apihub.kma.go.kr/api/typ01/cgi-bin/url/nph-kim_nc_pt_txt2"
+_DEFAULT_INSTITUTIONAL_URL = "https://apihub-pub.kma.go.kr/api/typ01/cgi-bin/url/nph-kim_nc_pt_txt2"
 _DEFAULT_GENERAL_URL = "https://apihub.kma.go.kr/api/typ01/cgi-bin/url/nph-kim_nc_pt_txt2"
 KMA_BASE_URL = os.getenv(
     "KMA_BASE_URL",
