@@ -5,7 +5,7 @@ import logging
 import httpx
 import pandas as pd
 import schedule
-from core.test_db_config import DATABASE
+from core.db_config import DATABASE
 from logging.handlers import TimedRotatingFileHandler
 from services.kma_service import get_raw_dataset, get_processed_data
 from services.dispersion import simulate_source, SOURCES
