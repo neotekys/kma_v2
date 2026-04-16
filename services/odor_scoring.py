@@ -85,15 +85,15 @@ def judge_odor_level(final_score: float) -> str:
     """
     최종 점수로 악취 레벨 판정
     PDF 기준:
-    - ≥ 80: 악취 발생 높음
-    - 60 ~ 79: 악취 발생 가능
-    - < 60: 악취 발생 낮음
+    - ≥ 80: 악취 확실
+    - 60 ~ 79: 악취 가능
+    - < 60: 악취 없음
     """
     if final_score >= 80:
-        return "악취 발생 높음"
+        return "악취 확실"
     if final_score >= 60:
-        return "악취 발생 가능"
-    return "악취 발생 낮음"
+        return "악취 가능"
+    return "악취 없음"
 
 
 def get_code_name(season: str, code: Optional[str]) -> str:
@@ -230,7 +230,7 @@ def winter_code1_upper_score(
 def winter_code2_upper_score(dt500: float) -> int:
     """
     겨울철 코드2 상층 점수 (최대 10점)
-    중부 지점이 아래 조건식을 만족하면 10점(최대 10점) 아니면 0점
+    중심 지점이 아래 조건식을 만족하면 10점(최대 10점) 아니면 0점
     
     조건식:
     - 500hPa 기온: -3.9 ≤ ΔT ≤ +3.9 → 10점
@@ -381,7 +381,7 @@ def winter_code3_inversion_score(
 def winter_code1_diffusion_score(weak_wind_count: int) -> Tuple[int, Dict[str, Any]]:
     """
     겨울철 코드1 하층확산 점수 (최대 25점)
-     '중부 지점'의 한국형수치예보모델 단일(지상)면 확산 점수 (최대 25점)
+     '중심 지점'의 한국형수치예보모델 단일(지상)면 확산 점수 (최대 25점)
     
     약풍 개수('2개 지점'*3개층=총 6개):
     - 6개 → 25점
@@ -1050,25 +1050,25 @@ def summer_code3_diffusion_score(weak_wind_count: int) -> int:
 
 
 def calculate_odor_score(
-    current: Dict[str, KimPoint],  # 현재 시간 (중부, 동부)
-    previous: Optional[Dict[str, KimPoint]],  # 12시간 전 (중부, 동부)
+    current: Dict[str, KimPoint],  # 현재 시간 (중심, 동측)
+    previous: Optional[Dict[str, KimPoint]],  # 12시간 전 (중심, 동측)
     month: int,
 ) -> Dict[str, Any]:
     """
     악취 점수 계산 (PDF 기준)
-    current, previous는 {"중부": KimPoint, "동부": KimPoint} 형태
+    current, previous는 {"중심": KimPoint, "동측": KimPoint} 형태
     """
     season = get_season(month)
     
-    # 중부 지점 데이터
-    center = current["중부"]
-    center_prev = previous["중부"] if previous else None
+    # 중심 지점 데이터
+    center = current["중심"]
+    center_prev = previous["중심"] if previous else None
     
-    # 동부 지점 데이터
-    east = current["동부"]
-    east_prev = previous["동부"] if previous else None
+    # 동측 지점 데이터
+    east = current["동측"]
+    east_prev = previous["동측"] if previous else None
     
-    # 12시간 후 변화량 계산 (중부 지점 기준)
+    # 12시간 후 변화량 계산 (중심 지점 기준)
     # current는 예보 시간대, previous는 12시간 후 시간대
     # 변화량 = 12시간 후 값 - 현재 값
     if center_prev:
@@ -1110,11 +1110,8 @@ def calculate_odor_score(
             mandatory_condition_desc = "500hPa 고도가 +15gpm ~ +25gpm 범위 (+15 ≤ Δhgt ≤ +25)"
         elif code == "SF2":
             mandatory_condition_value = dh500
-            mandatory_condition_met = -10 <= dh500 <= 10
-            mandatory_condition_desc = "500hPa 고도가 -10gpm ~ +10gpm 범위 (-10 ≤ Δhgt ≤ +10)"
-        else:
             mandatory_condition_met = True
-            mandatory_condition_desc = "봄가을 코드 외의 경우"
+            mandatory_condition_desc = "봄가을코드1 (+15 ≤ Δhgt ≤ +25) 이외의 경우"
     else:  # SUMMER
         if code == "S1":
             mandatory_condition_value = dh500
@@ -1290,7 +1287,7 @@ def calculate_odor_score(
     
     score_details["surface"] = surface_details or {"value": ws10_avg, "score": surface_score, "max": 20}
     
-    # 역전층 점수 (중부 지점 기준)
+    # 역전층 점수 (중심 지점 기준)
     # 역전 강도: 850hPa 기온 - 지상 기온
     dt_inv = center.tmp850 - center.t2m
     
@@ -1355,13 +1352,13 @@ def calculate_odor_score(
     else:  # SUMMER
         threshold100, threshold200, threshold400 = 1.5, 2.5, 3.5
     
-    # 중부 지점
+    # 중심 지점
     weak_wind_count += count_weak_winds(
         center.ws80, center.ws975, center.ws950,
         threshold100, threshold200, threshold400
     )
     
-    # 동부 지점
+    # 동측 지점
     weak_wind_count += count_weak_winds(
         east.ws80, east.ws975, east.ws950,
         threshold100, threshold200, threshold400
