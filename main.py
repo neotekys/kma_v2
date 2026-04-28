@@ -161,12 +161,14 @@ async def job(client: httpx.AsyncClient):
         is_running = False
 
 def run_job_async(client: httpx.AsyncClient):
-    """스케줄러에서 비동기 작업을 호출하기 위한 래퍼"""
     try:
-        loop = asyncio.get_running_loop()
-        loop.create_task(job(client))
-    except RuntimeError:
-        asyncio.run(job(client))
+        loop = asyncio.get_event_loop()  
+        if loop.is_running():
+            loop.create_task(job(client))
+        else:
+            loop.run_until_complete(job(client))
+    except Exception as e:
+        logger.error(f"스케줄러 실행 오류: {e}")
 
 async def scheduler_loop(client: httpx.AsyncClient):
     """KMA KIM 모델 업데이트 주기에 맞춘 스케줄러 루프"""
